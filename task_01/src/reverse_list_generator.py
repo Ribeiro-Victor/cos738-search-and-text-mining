@@ -11,7 +11,7 @@ class ReverseListGenerator:
 
     def __init__(self) -> None:
         self.config = self.read_config_file(SRC_FOLDER_PATH + 'GLI.CFG')
-        self.input_folder_path = SRC_FOLDER_PATH + 'data/'
+        self.data_folder_path = SRC_FOLDER_PATH + 'data/'
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
         self.stop_words = set(s.upper() for s in stopwords.words('english')).union(".", ",", ";", "!", "?", ";", "=", "<", "+", "``", "%", "[", "]", "(", ")", '"', "'", ":", "-", "")
         self.inverted_list = {}
@@ -53,7 +53,7 @@ class ReverseListGenerator:
         
         for filename in self.config['read']:
 
-            filepath = self.input_folder_path + filename
+            filepath = self.data_folder_path + filename
             tree = ET.parse(filepath)
             root = tree.getroot()
             
