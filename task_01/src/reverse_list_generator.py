@@ -1,8 +1,10 @@
 import xml.etree.ElementTree as ET
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
-# SRC_FOLDER_PATH = '/home/victor/Documents/UFRJ/BMT_2024/cos738-search-and-text-mining/task_01/src/'
+nltk.download('stopwords')
+nltk.download('punkt')
 SRC_FOLDER_PATH = ''
 
 class ReverseListGenerator:
@@ -10,7 +12,7 @@ class ReverseListGenerator:
     def __init__(self) -> None:
         self.config = self.read_config_file(SRC_FOLDER_PATH + 'GLI.CFG')
         self.input_folder_path = SRC_FOLDER_PATH + 'data/'
-        self.output_folder_path = SRC_FOLDER_PATH + 'output/'
+        self.result_folder_path = SRC_FOLDER_PATH + 'result/'
         self.stop_words = set(s.upper() for s in stopwords.words('english')).union(".", ",", ";", "!", "?", ";", "=", "<", "+", "``", "%", "[", "]", "(", ")", '"', "'", ":", "-", "")
         self.inverted_list = {}
 
@@ -26,9 +28,9 @@ class ReverseListGenerator:
             for line in lines:
                 key, value = line.strip().split('=')
                 if key == 'LEIA':
-                    config['read'].append(value.strip("<>"))
+                    config['read'].append(value)
                 elif key == 'ESCREVA':
-                    config['write'] = value.strip("<>")
+                    config['write'] = value
 
         return config
 
@@ -70,12 +72,11 @@ class ReverseListGenerator:
         return records_dict
     
     def write_output_file(self, inv_list):
-        filepath = self.output_folder_path + self.config['write']
+        filepath = self.result_folder_path + self.config['write']
         with open(filepath, 'w') as f:
             f.write('WORD;APPEARENCE\n')
             for word, count in inv_list.items():
                 f.write(word + ';' + str(count) + '\n')
-
 
     def run(self):
         records_dict = self.read_input_files()
