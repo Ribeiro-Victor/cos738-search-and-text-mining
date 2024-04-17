@@ -2,6 +2,7 @@ import json
 import ast
 import re
 import math
+import pandas as pd
 
 SRC_FOLDER_PATH = ''
 
@@ -51,38 +52,40 @@ class Indexer:
 
     def create_term_doc_matrix(self, inv_list: dict):
         
-        regex_pattern = re.compile(r'^[A-Z]{3,}$') #Over 2 characters and only letters
+        regex_pattern = re.compile(r'^[A-Z]{2,}$') #Over 2 characters and only letters
         filtered_inv_list = {}
         for key, value in inv_list.items():
             if regex_pattern.match(key):
                 filtered_inv_list[key] = value
+        
+        terms = filtered_inv_list.keys()
+        docs_number = list(set().union(*inv_list.values()))
 
-        term_doc_matrix = {}
+        term_x_doc_df = pd.DataFrame(index=terms, columns=docs_number, dtype='float')
+        term_x_doc_df.fillna(0, inplace=True)
+        
         for term, appearence in filtered_inv_list.items():
-            term_doc_matrix[term] = {}
             for doc_number in appearence:
-                term_doc_matrix[term][doc_number] = term_doc_matrix[term].get(doc_number, 0) + 1 # Counts the term frequency in documents
+                term_x_doc_df.at[term, doc_number] += 1 # Counts the term frequency in documents
         
-        doc_term_counter = {}
-        for doc_list in filtered_inv_list.values():
-            for doc_number in doc_list:
-                doc_term_counter[doc_number] = doc_term_counter.get(doc_number, 0) + 1
-        documents_count = len(doc_term_counter)
-
         idf = {}
-        for term in term_doc_matrix.keys():
-            idf[term] = math.log(documents_count/len(term_doc_matrix[term]))
+
+        return term_x_doc_df
+
+        # idf = {}
+        # for term in term_doc_matrix.keys():
+        #     idf[term] = math.log(documents_count/len(term_doc_matrix[term]))
         
-        for term, appearence in term_doc_matrix.items():
-            for doc_number in appearence:
-                term_doc_matrix[term][doc_number] *= idf[term] # Calculates tf-idf
+        # for term, appearence in term_doc_matrix.items():
+        #     for doc_number in appearence:
+        #         term_doc_matrix[term][doc_number] *= idf[term] # Calculates tf-idf
         
-        return term_doc_matrix
+        # return term_doc_matrix
 
     def run(self):
         inv_list = self.read_input_file()
         term_doc_matrix = self.create_term_doc_matrix(inv_list)
-        self.write_output_file(term_doc_matrix)
+        # self.write_output_file(term_doc_matrix)
 
 
 idx = Indexer()
