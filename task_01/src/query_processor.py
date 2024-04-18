@@ -44,7 +44,7 @@ class QueryProcessor:
                 query_number = int(query.find('QueryNumber').text.strip())
                 query_text = query.find('QueryText').text.strip().replace(';', '')
                 clean_text = ' '.join(query_text.split())
-                file.write(f'{query_number};{clean_text}\n')
+                file.write(f'{query_number};{clean_text.upper()}\n')
     
     def calculate_score(self, score: str):
         #Score in format ABCD
