@@ -95,6 +95,7 @@ class Indexer:
         inv_list = self.read_input_file()
         term_doc_matrix = self.create_term_doc_matrix(inv_list)
         self.write_output_file(term_doc_matrix)
+        logger.info('All processing done. Program exiting.', extra=logger_extra_dict)
 
 if __name__ == '__main__':
     idx = Indexer()
