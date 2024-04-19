@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import logging
+import time
 
 logging.basicConfig(format='[%(asctime)s][%(levelname)s - %(className)s] %(message)s', level=logging.INFO, datefmt='%d/%m/%Y - %H:%M:%S')
 logger_extra_dict = {'className': 'ReverseListGenerator'}
@@ -26,16 +27,24 @@ class ReverseListGenerator:
             'write': None
         }
 
-        with open(path, 'r') as file:
-            lines = file.readlines()
+        try:
+            with open(path, 'r') as file:
+                lines = file.readlines()
 
-            for line in lines:
-                key, value = line.strip().split('=')
-                if key == 'LEIA':
-                    config['read'].append(value)
-                elif key == 'ESCREVA':
-                    config['write'] = value
-        logger.info('Config file read successfully.', extra=logger_extra_dict)
+                for line in lines:
+                    key, value = line.strip().split('=')
+                    if key == 'LEIA':
+                        config['read'].append(value)
+                    elif key == 'ESCREVA':
+                        config['write'] = value
+            logger.info('Config file successfully read.', extra=logger_extra_dict)
+        
+        except FileNotFoundError:
+            logger.error(f'Config file "{path}" not found. Exiting program.', extra=logger_extra_dict)
+            exit(1)
+        except Exception:
+            logger.error(f'Error while reading config file. Please check file structure. Exiting program.', extra=logger_extra_dict)
+            exit(1)
         return config
 
     def build_single_inverted_index(self, id, text):
@@ -57,8 +66,12 @@ class ReverseListGenerator:
         
         for filename in self.config['read']:
             filepath = self.data_folder_path + filename
-            tree = ET.parse(filepath)
-            root = tree.getroot()
+            try:
+                tree = ET.parse(filepath)
+                root = tree.getroot()
+            except Exception:
+                logger.error(f'Input file "{filepath}" not found. Exiting program.', extra=logger_extra_dict)
+                exit(1)
             
             for record in root.findall('.//RECORD'):
                 record_num = int(record.find('RECORDNUM').text)
@@ -72,22 +85,30 @@ class ReverseListGenerator:
                 
                 records_dict[record_num] = abstract
 
-        logger.info('Input files read successfully.', extra=logger_extra_dict)
+        logger.info('Input files successfully read.', extra=logger_extra_dict)
+        logger.info(f'Number of documents read: {len(records_dict)}', extra=logger_extra_dict)
         return records_dict
     
     def write_output_file(self, inv_list):
         logger.info(f'Writing output files: {self.config["write"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['write']
-        with open(filepath, 'w') as f:
-            f.write('WORD;APPEARENCE\n')
-            for word, count in inv_list.items():
-                f.write(word + ';' + str(count) + '\n')
-        logger.info('Output file generated successfully.', extra=logger_extra_dict)
+        try:
+            with open(filepath, 'w') as f:
+                f.write('WORD;APPEARENCE\n')
+                for word, count in inv_list.items():
+                    f.write(word + ';' + str(count) + '\n')
+        except Exception:
+            logger.error(f'Couldn\'t write output file. Please check folder structure. Exiting program.', extra=logger_extra_dict)
+            exit(1)
+        logger.info('Output file successfully generated.', extra=logger_extra_dict)
 
     def run(self):
         records_dict = self.read_input_files()
         inv_index = {}
+        
         logger.info('Building inverted index...', extra=logger_extra_dict)
+        start_time = time.perf_counter()
+
         for id, abstract in records_dict.items():
             single_inv_index = self.build_single_inverted_index(id, abstract)
             for word, count in single_inv_index.items():
@@ -95,7 +116,14 @@ class ReverseListGenerator:
                     inv_index[word] += count
                 else:
                     inv_index[word] = count
-        logger.info('Inverted index built successfully.', extra=logger_extra_dict)
+
+        end_time = time.perf_counter()
+        run_time = end_time - start_time
+        avg_time = run_time/len(records_dict)
+        logger.info('Inverted index successfully built.', extra=logger_extra_dict)
+        logger.info(f'Total word processing time for all documents: {run_time: .2e}s', extra=logger_extra_dict)
+        logger.info(f'Average processing time per document: {avg_time: .2e}s', extra=logger_extra_dict)
+
         self.write_output_file(inv_index)
         logger.info('All processing done. Program exiting.', extra=logger_extra_dict)
 

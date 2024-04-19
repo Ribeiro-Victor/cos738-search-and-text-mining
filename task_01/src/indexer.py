@@ -3,6 +3,7 @@ import re
 import pandas as pd
 import numpy as np
 import logging
+import time
 
 logging.basicConfig(format='[%(asctime)s][%(levelname)s - %(className)s] %(message)s', level=logging.INFO, datefmt='%d/%m/%Y - %H:%M:%S')
 logger_extra_dict = {'className': 'Indexer'}
@@ -24,41 +25,59 @@ class Indexer:
             'write': None
         }
 
-        with open(path, 'r') as file:
-            lines = file.readlines()
+        try:
+            with open(path, 'r') as file:
+                lines = file.readlines()
 
-            for line in lines:
-                key, value = line.strip().split('=')
-                if key == 'LEIA':
-                    config['read'] = value
-                elif key == 'ESCREVA':
-                    config['write'] = value
+                for line in lines:
+                    key, value = line.strip().split('=')
+                    if key == 'LEIA':
+                        config['read'] = value
+                    elif key == 'ESCREVA':
+                        config['write'] = value
+        except FileNotFoundError:
+            logger.error(f'Config file "{path}" not found. Exiting program.', extra=logger_extra_dict)
+            exit(1)
+        except Exception:
+            logger.error(f'Error while reading config file. Please check file structure. Exiting program.', extra=logger_extra_dict)
+            exit(1)
 
-        logger.info('Config file read successfully.', extra=logger_extra_dict)
+        logger.info('Config file successfully read.', extra=logger_extra_dict)
         return config
 
     def read_input_file(self):
         logger.info(f'Reading input file: {self.config["read"]}', extra=logger_extra_dict)
         inv_list = {}
         filepath = self.result_folder_path + self.config['read']
+        try:
+            with open(filepath, 'r') as file:
+                next(file) # Skips header
+                lines = file.readlines()
 
-        with open(filepath, 'r') as file:
-            next(file) # Skips header
-            lines = file.readlines()
-
-            for line in lines:
-                word, appearence_str = line.strip().split(';')
-                appearence_list = ast.literal_eval(appearence_str)
-                inv_list[word] = appearence_list
+                for line in lines:
+                    word, appearence_str = line.strip().split(';')
+                    appearence_list = ast.literal_eval(appearence_str)
+                    inv_list[word] = appearence_list
+        except FileNotFoundError:
+            logger.error(f'Input file "{self.config["read"]}" not found. Exiting program.', extra=logger_extra_dict)
+            exit(1)
+        except Exception:
+            logger.error(f'Error while reading input file. Please check file structure. Exiting program.', extra=logger_extra_dict)
+            exit(1)
         
-        logger.info('Input file read successfully.', extra=logger_extra_dict)
+        logger.info('Input file successfully read.', extra=logger_extra_dict)
+        logger.info(f'Number of terms in inverted index: {len(inv_list)}', extra=logger_extra_dict)
         return inv_list
     
     def write_output_file(self, term_doc_matrix: pd.DataFrame):
         logger.info(f'Writing output files: {self.config["write"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['write']
-        term_doc_matrix.to_csv(filepath, sep=';')
-        logger.info('Output file generated successfully.', extra=logger_extra_dict)
+        try:
+            term_doc_matrix.to_csv(filepath, sep=';')
+        except Exception:
+            logger.error(f'Couldn\'t write output file. Please check folder structure. Exiting program.', extra=logger_extra_dict)
+            exit(1)
+        logger.info('Output file successfully generated.', extra=logger_extra_dict)
 
     def create_term_doc_matrix(self, inv_list: dict) -> pd.DataFrame:
         logger.info('Building Document-term matrix...', extra=logger_extra_dict)
@@ -88,12 +107,18 @@ class Indexer:
         docs_columns = term_x_doc_df.columns[term_x_doc_df.columns != 'idf']  #Exclude 'idf' column
         term_x_doc_df[docs_columns] = term_x_doc_df[docs_columns].mul(term_x_doc_df['idf'], axis=0) #Calculates tf-idf
 
-        logger.info('Document-term matrix built succesfully.', extra=logger_extra_dict)
+        logger.info('Document-term matrix successfully built.', extra=logger_extra_dict)
         return term_x_doc_df
 
     def run(self):
         inv_list = self.read_input_file()
+        start_time = time.time()
         term_doc_matrix = self.create_term_doc_matrix(inv_list)
+        end_time = time.time()
+        run_time = end_time - start_time
+        avg_time = run_time/len(inv_list)
+        logger.info(f'Total processing time for all terms: {run_time: .2e}s', extra=logger_extra_dict)
+        logger.info(f'Average processing time per term: {avg_time: .2e}s', extra=logger_extra_dict)
         self.write_output_file(term_doc_matrix)
         logger.info('All processing done. Program exiting.', extra=logger_extra_dict)
 
