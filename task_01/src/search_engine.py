@@ -1,17 +1,19 @@
 import pandas as pd
 import numpy as np
 from numpy.linalg import norm
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+import logging
 
-nltk.download('stopwords')
-nltk.download('punkt')
-SRC_FOLDER_PATH = r'D:\UFRJ\9º Período\Busca e Mineração de Texto\cos738-search-and-text-mining\task_01\src\\'
+logging.basicConfig(format='[%(asctime)s][%(levelname)s - %(className)s] %(message)s', level=logging.INFO, datefmt='%d/%m/%Y - %H:%M:%S')
+logger_extra_dict = {'className': 'SearchEngine'}
+logger = logging.getLogger(__name__)
+SRC_FOLDER_PATH = ''
 
 class SearchEngine:
 
     def __init__(self) -> None:
+        logger.info('Starting execution...', extra=logger_extra_dict)
         self.config = self.read_config_file(SRC_FOLDER_PATH + 'BUSCA.CFG')
         self.data_folder_path = SRC_FOLDER_PATH + 'data/'
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
@@ -19,6 +21,7 @@ class SearchEngine:
         
 
     def read_config_file(self, path: str):
+        logger.info('Reading config file...', extra=logger_extra_dict)
         config = {
             'model': None,
             'query': None,
@@ -37,14 +40,18 @@ class SearchEngine:
                 elif key == 'RESULTADOS':
                     config['results'] = value
 
+        logger.info('Config file read successfully.', extra=logger_extra_dict)
         return config
 
     def read_vector_model(self) -> pd.DataFrame:
+        logger.info(f'Reading vector model file: {self.config["model"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['model']
         vector_model = pd.read_csv(filepath, sep=';', index_col=0)
+        logger.info('Vector model read successfully.', extra=logger_extra_dict)
         return vector_model
     
     def read_queries_file(self) -> dict:
+        logger.info(f'Reading processed queries file: {self.config["query"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['query']
         
         query_dict = {}
@@ -55,6 +62,7 @@ class SearchEngine:
                 query_num, query_text = line.strip().split(';')
                 query_dict[query_num] = query_text
         
+        logger.info('Processed queries file read successfully.', extra=logger_extra_dict)
         return query_dict
 
     def tokenize_query_text(self, text: str):
@@ -76,6 +84,7 @@ class SearchEngine:
         return similarity_df
 
     def write_output_to_file(self, queries_similarity_df_list: dict):
+        logger.info(f'Writing results to file: {self.config["results"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['results']
         
         with open(filepath, 'w') as f:
@@ -87,17 +96,22 @@ class SearchEngine:
                     l = [rank, row[0], row[1]['Similarity']]
                     rank += 1
                     f.write(f'{query_number};{str(l)}\n')
+        logger.info('Results file generated successfully.', extra=logger_extra_dict)
 
     def run(self):
         vector_model = self.read_vector_model()
         query_dict = self.read_queries_file()
         query_similarity_result_dict = {}
+        logger.info(f'Calculating document ranking for each query...', extra=logger_extra_dict)
         for query_number, query_text in query_dict.items():
             query_tokens = self.tokenize_query_text(query_text)
             query_tf_idf = self.calculate_query_tf_idf(vector_model, query_tokens)
             query_similarity_df = self.calculate_query_similarity(vector_model, query_tf_idf)
             query_similarity_result_dict[query_number] = query_similarity_df
+        logger.info(f'Document ranking for each query calculated successfully.', extra=logger_extra_dict)
         self.write_output_to_file(query_similarity_result_dict)
+        logger.info('All processing done. Program exiting.', extra=logger_extra_dict)
 
-se = SearchEngine()
-se.run()
+if __name__ == '__main__':
+    se = SearchEngine()
+    se.run()
