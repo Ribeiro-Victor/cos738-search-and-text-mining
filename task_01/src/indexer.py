@@ -1,19 +1,24 @@
-import json
 import ast
 import re
-import math
 import pandas as pd
 import numpy as np
+import logging
 
-SRC_FOLDER_PATH = r'D:\UFRJ\9º Período\Busca e Mineração de Texto\cos738-search-and-text-mining\task_01\src\\'
+logging.basicConfig(format='[%(asctime)s][%(levelname)s - %(className)s] %(message)s', level=logging.INFO, datefmt='%d/%m/%Y - %H:%M:%S')
+logger_extra_dict = {'className': 'Indexer'}
+logger = logging.getLogger(__name__)
+
+SRC_FOLDER_PATH = r''
 
 class Indexer:
     
     def __init__(self) -> None:
+        logger.info('Starting execution...', extra=logger_extra_dict)
         self.config = self.read_config_file(SRC_FOLDER_PATH + 'INDEX.CFG')
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
 
     def read_config_file(self, path: str):
+        logger.info('Reading config file...', extra=logger_extra_dict)
         config = {
             'read': None,
             'write': None
@@ -29,9 +34,11 @@ class Indexer:
                 elif key == 'ESCREVA':
                     config['write'] = value
 
+        logger.info('Config file read successfully.', extra=logger_extra_dict)
         return config
 
     def read_input_file(self):
+        logger.info(f'Reading input file: {self.config["read"]}', extra=logger_extra_dict)
         inv_list = {}
         filepath = self.result_folder_path + self.config['read']
 
@@ -44,13 +51,17 @@ class Indexer:
                 appearence_list = ast.literal_eval(appearence_str)
                 inv_list[word] = appearence_list
         
+        logger.info('Input file read successfully.', extra=logger_extra_dict)
         return inv_list
     
     def write_output_file(self, term_doc_matrix: pd.DataFrame):
+        logger.info(f'Writing output files: {self.config["write"]}', extra=logger_extra_dict)
         filepath = self.result_folder_path + self.config['write']
         term_doc_matrix.to_csv(filepath, sep=';')
+        logger.info('Output file generated successfully.', extra=logger_extra_dict)
 
     def create_term_doc_matrix(self, inv_list: dict) -> pd.DataFrame:
+        logger.info('Building Document-term matrix...', extra=logger_extra_dict)
         
         regex_pattern = re.compile(r'^[A-Z]{2,}$') #Over 2 characters and only letters
         filtered_inv_list = {}
@@ -77,6 +88,7 @@ class Indexer:
         docs_columns = term_x_doc_df.columns[term_x_doc_df.columns != 'idf']  #Exclude 'idf' column
         term_x_doc_df[docs_columns] = term_x_doc_df[docs_columns].mul(term_x_doc_df['idf'], axis=0) #Calculates tf-idf
 
+        logger.info('Document-term matrix built succesfully.', extra=logger_extra_dict)
         return term_x_doc_df
 
     def run(self):
@@ -84,6 +96,6 @@ class Indexer:
         term_doc_matrix = self.create_term_doc_matrix(inv_list)
         self.write_output_file(term_doc_matrix)
 
-
-idx = Indexer()
-idx.run()
+if __name__ == '__main__':
+    idx = Indexer()
+    idx.run()
