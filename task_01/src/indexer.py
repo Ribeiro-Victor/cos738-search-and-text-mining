@@ -15,7 +15,7 @@ class Indexer:
     
     def __init__(self) -> None:
         logger.info('Starting execution...', extra=logger_extra_dict)
-        self.config = self.read_config_file(SRC_FOLDER_PATH + 'INDEX.CFG')
+        self.config = self.read_config_file(SRC_FOLDER_PATH + 'config/INDEX.CFG')
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
 
     def read_config_file(self, path: str):

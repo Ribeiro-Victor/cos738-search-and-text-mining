@@ -11,7 +11,7 @@ class QueryProcessor:
 
     def __init__(self) -> None:
         logger.info('Starting execution...', extra=logger_extra_dict)
-        self.config = self.read_config_file(SRC_FOLDER_PATH + 'PC.CFG')
+        self.config = self.read_config_file(SRC_FOLDER_PATH + 'config/PC.CFG')
         self.data_folder_path = SRC_FOLDER_PATH + 'data/'
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
 

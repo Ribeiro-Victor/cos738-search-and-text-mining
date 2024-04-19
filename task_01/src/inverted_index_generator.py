@@ -14,7 +14,7 @@ class ReverseListGenerator:
 
     def __init__(self) -> None:
         logger.info('Starting execution...', extra=logger_extra_dict)
-        self.config = self.read_config_file(SRC_FOLDER_PATH + 'GLI.CFG')
+        self.config = self.read_config_file(SRC_FOLDER_PATH + 'config/GLI.CFG')
         self.data_folder_path = SRC_FOLDER_PATH + 'data/'
         self.result_folder_path = SRC_FOLDER_PATH + 'result/'
         self.stop_words = set(s.upper() for s in stopwords.words('english')).union(".", ",", ";", "!", "?", ";", "=", "<", "+", "``", "%", "[", "]", "(", ")", '"', "'", ":", "-", "")
