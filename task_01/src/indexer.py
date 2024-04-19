@@ -79,7 +79,7 @@ class Indexer:
             exit(1)
         logger.info('Output file successfully generated.', extra=logger_extra_dict)
 
-    def create_term_doc_matrix(self, inv_list: dict) -> pd.DataFrame:
+    def create_term_doc_matrix(self, inv_list: dict, tf_normalized) -> pd.DataFrame:
         logger.info('Building Document-term matrix...', extra=logger_extra_dict)
         
         regex_pattern = re.compile(r'^[A-Z]{2,}$') #Over 2 characters and only letters
@@ -98,6 +98,10 @@ class Indexer:
             for doc_number in appearence:
                 term_x_doc_df.at[term, doc_number] += 1 #Counts the term frequency (tf) in documents
         
+        if(tf_normalized):
+            max_term_freq = term_x_doc_df.max()
+            term_x_doc_df = term_x_doc_df / max_term_freq
+        
         documents_count = len(docs_numbers)
 
         term_x_doc_df['doc_freq'] = term_x_doc_df.apply(lambda row: (row != 0).sum(), axis=1) #Doc frequency for each term
@@ -112,8 +116,14 @@ class Indexer:
 
     def run(self):
         inv_list = self.read_input_file()
+        
+        ans = input('Should term frequency (tf) be normalized? (Y or N)\n')
+        tf_normalized = False
+        if ans.upper() == 'Y':
+            tf_normalized = True
+        
         start_time = time.time()
-        term_doc_matrix = self.create_term_doc_matrix(inv_list)
+        term_doc_matrix = self.create_term_doc_matrix(inv_list, tf_normalized)
         end_time = time.time()
         run_time = end_time - start_time
         avg_time = run_time/len(inv_list)
